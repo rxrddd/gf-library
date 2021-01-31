@@ -75,8 +75,8 @@ func (l *defaultCart) Remove(userId string, itemId string) (err error) {
 }
 
 func (l *defaultCart) Incr(userId string, itemId string) (err error) {
-	if flag, err := l.HasItem(userId, itemId); flag && err != nil {
-		return err
+	if flag, _ := l.HasItem(userId, itemId); flag {
+		return nil
 	}
 	_, err = l.redis.Do("HINCRBY", l.getHashKey(userId, itemId), "num", 1)
 	return err
