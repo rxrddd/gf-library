@@ -13,10 +13,10 @@ import (
 
 //点赞接口
 type ILike interface {
-	Like(likeId string, userId string) (err error)
-	UnLike(likeId string, userId string) (err error)
-	IsLike(likeId string, userId string) (flag bool, err error)
-	Count(likeId string) (count int64, err error)
+	Like(likeId string, userId string) (err error)              //点赞
+	UnLike(likeId string, userId string) (err error)            //取消赞
+	IsLike(likeId string, userId string) (flag bool, err error) //是否点赞
+	Count(likeId string) (count int64, err error)               //文章的点赞总数
 }
 
 const like = "like"
