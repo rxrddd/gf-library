@@ -1,6 +1,7 @@
 package redisx
 
 import (
+	"github.com/gogf/gf/database/gredis"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -12,4 +13,13 @@ func Multi(conn redis.Conn, fc func(con redis.Conn)) error {
 		return err
 	}
 	return nil
+}
+
+func DelKey(conn *gredis.Redis, redisKey string) {
+	keys, _ := conn.DoVar("KEYS", redisKey)
+	_ = Multi(conn.Conn(), func(con redis.Conn) {
+		for _, key := range keys.Strings() {
+			con.Send("DEL", key)
+		}
+	})
 }
