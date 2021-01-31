@@ -2,8 +2,10 @@ package like
 
 import (
 	"context"
+	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/test/gtest"
-	"github.com/gogf/gf/util/gconv"
+	"github.com/gomodule/redigo/redis"
+	"github.com/rxrddd/gf-library/utils/redisx"
 	"testing"
 )
 
@@ -12,9 +14,7 @@ func TestNewPostLike(t *testing.T) {
 		testSetup(NewLike(context.Background(), &Option{
 			RedisKey: "post_user_like",
 		}), t)
-		testSetup(NewLike(context.Background(), &Option{
-			RedisKey: "vip_user_like",
-		}), t)
+		delKey("post_user_like*")
 	})
 }
 func testSetup(like ILike, t *gtest.T) {
@@ -48,33 +48,11 @@ func testSetup(like ILike, t *gtest.T) {
 	t.Assert(i, 0)
 	t.Log("==============Count END==============")
 }
-
-func TestNewPostLike_2(t *testing.T) {
-	likeId := "1"
-	var err error
-	opt := &Option{
-		RedisKey: "post_user_like",
-	}
-	like := NewLike(context.Background(), opt)
-	gtest.C(t, func(t *gtest.T) {
-		for i := 0; i <= 10; i++ {
-			err = like.Like(likeId, gconv.String(i))
-			t.Assert(err, nil)
+func delKey(redisKey string) {
+	keys, _ := g.Redis().DoVar("KEYS", redisKey)
+	redisx.Multi(g.Redis().Conn(), func(con redis.Conn) {
+		for _, key := range keys.Strings() {
+			con.Send("DEL", key)
 		}
-		err = like.UnLike(likeId, "2")
-		err = like.UnLike(likeId, "12")
-
-	})
-	gtest.C(t, func(t *gtest.T) {
-		likeId2 := "2"
-		for i := 0; i <= 10; i++ {
-			err = like.Like(likeId2, gconv.String(i))
-			t.Assert(err, nil)
-		}
-		err = like.UnLike(likeId2, "2")
-		err = like.UnLike(likeId2, "7")
-		count, err := like.Count("2")
-		t.Assert(err, nil)
-		t.Assert(count, 9)
 	})
 }

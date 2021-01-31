@@ -7,6 +7,8 @@ import (
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/os/gtime"
 	"github.com/gogf/gf/util/gutil"
+	"github.com/gomodule/redigo/redis"
+	"github.com/rxrddd/gf-library/utils/redisx"
 )
 
 //点赞接口
@@ -80,18 +82,14 @@ func (l *defaultLike) Like(likeId string, userId string) (err error) {
 }
 
 func (l *defaultLike) like(likeId string, userId string) (err error) {
-	c := l.redis.Conn()
-	c.Send("MULTI")
-	c.Send("SADD", l.getChangeLikeKey(), likeId)
-	c.Send("SADD", l.getChangeLikeUserKey(likeId), userId)
-	c.Send("INCR", l.getCounterKey(likeId))
-	c.Send("SADD", l.getSetKey(likeId), userId)
-	attrs := l.handleAttr(likeId, userId, true)
-	c.Send("HMSET", attrs...)
-	if _, err = c.Do("EXEC"); err != nil {
-		return err
-	}
-	return nil
+	return redisx.Multi(l.redis.Conn(), func(c redis.Conn) {
+		c.Send("SADD", l.getChangeLikeKey(), likeId)
+		c.Send("SADD", l.getChangeLikeUserKey(likeId), userId)
+		c.Send("INCR", l.getCounterKey(likeId))
+		c.Send("SADD", l.getSetKey(likeId), userId)
+		attrs := l.handleAttr(likeId, userId, true)
+		c.Send("HMSET", attrs...)
+	})
 }
 
 func (l *defaultLike) handleAttr(likeId string, userId string, isLike bool) []interface{} {
@@ -140,16 +138,12 @@ func (l *defaultLike) Count(likeId string) (count int64, err error) {
 }
 
 func (l *defaultLike) unLike(likeId string, userId string) (err error) {
-	c := l.redis.Conn()
-	c.Send("MULTI")
-	c.Send("SADD", l.getChangeLikeKey(), likeId)
-	c.Send("SADD", l.getChangeLikeUserKey(likeId), userId)
-	c.Send("DECR", l.getCounterKey(likeId))
-	c.Send("SREM", l.getSetKey(likeId), userId)
-	attrs := l.handleAttr(likeId, userId, false)
-	c.Send("HMSET", attrs...)
-	if _, err = c.Do("EXEC"); err != nil {
-		return err
-	}
-	return nil
+	return redisx.Multi(l.redis.Conn(), func(c redis.Conn) {
+		c.Send("SADD", l.getChangeLikeKey(), likeId)
+		c.Send("SADD", l.getChangeLikeUserKey(likeId), userId)
+		c.Send("DECR", l.getCounterKey(likeId))
+		c.Send("SREM", l.getSetKey(likeId), userId)
+		attrs := l.handleAttr(likeId, userId, false)
+		c.Send("HMSET", attrs...)
+	})
 }
