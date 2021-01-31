@@ -22,23 +22,16 @@ type ICart interface {
 	HasItem(userId string, itemId string) (flag bool, err error) //是否已经加入了购物车
 }
 
-// 购物车数据
-type ShoppingData struct {
-	Item []*Item `json:"item"`
-}
-
 // 单个商品item元素
 type Item struct {
-	ItemId       string          `json:"item_id"`
-	ParentItemId string          `json:"parent_item_id,omitempty"` // 绑定的父item id
-	OrderId      string          `json:"order_id,omitempty"`       // 绑定的订单号
-	Sku          string          `json:"sku"`
-	Spu          string          `json:"spu"`
-	Num          int32           `json:"num"`
-	SalePrice    float64         `json:"sale_price"`           // 记录加车时候的销售价格
-	PostFree     bool            `json:"post_free,omitempty"`  // 是否免邮
-	Activities   []*ItemActivity `json:"activities,omitempty"` // 参加的活动记录
-	CreateTime   int64           `json:"create_time"`
+	ItemId     string          `json:"item_id"`
+	Sku        string          `json:"sku"`
+	Spu        string          `json:"spu"`
+	Num        int32           `json:"num"`
+	SalePrice  float64         `json:"sale_price"`           // 记录加车时候的销售价格
+	PostFree   bool            `json:"post_free,omitempty"`  // 是否免邮
+	Activities []*ItemActivity `json:"activities,omitempty"` // 参加的活动记录
+	CreateTime int64           `json:"create_time"`
 }
 
 // 活动
@@ -52,10 +45,15 @@ type defaultCart struct {
 	redis *gredis.Redis
 }
 
-//使用 set和hash实现  set装每个用户的所有购物车商品id
-func NewDefaultCart() ICart {
+func NewDefaultCart(redis ...*gredis.Redis) ICart {
+	var r *gredis.Redis
+	if len(redis) > 0 {
+		r = redis[0]
+	} else {
+		r = g.Redis()
+	}
 	return &defaultCart{
-		redis: g.Redis(),
+		redis: r,
 	}
 }
 
