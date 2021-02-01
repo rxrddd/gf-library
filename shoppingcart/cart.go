@@ -45,7 +45,7 @@ type defaultCart struct {
 	redis *gredis.Redis
 }
 
-func NewDefaultCart(redis ...*gredis.Redis) ICart {
+func New(redis ...*gredis.Redis) ICart {
 	var r *gredis.Redis
 	if len(redis) > 0 {
 		r = redis[0]

@@ -11,7 +11,7 @@ import (
 
 func TestNewPostLike(t *testing.T) {
 	gtest.C(t, func(t *gtest.T) {
-		testSetup(NewLike(context.Background(), &Option{
+		testSetup(New(context.Background(), &Option{
 			RedisKey: "post_user_like",
 		}), t)
 		delKey("post_user_like*")

@@ -18,7 +18,7 @@ func TestNewDefaultFollow(t *testing.T) {
 	delKeys()
 	gtest.C(t, func(t *gtest.T) {
 		var err error
-		fl := NewDefaultFollow()
+		fl := New()
 		t.Log("Follow")
 		err = fl.Follow(userId1, userId2)
 		t.Assert(err, nil)

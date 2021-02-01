@@ -36,7 +36,7 @@ func TestDefaultCart(t *testing.T) {
 	gtest.C(t, func(t *gtest.T) {
 		cart := setUp()
 		t.AssertNE(cart, nil)
-		t.Log("NewDefaultCart")
+		t.Log("New")
 		var err error
 		t.Log("Create")
 		err = cart.Create(userId, item)
@@ -93,5 +93,5 @@ func TestDefaultCart(t *testing.T) {
 	})
 }
 func setUp() ICart {
-	return NewDefaultCart()
+	return New()
 }

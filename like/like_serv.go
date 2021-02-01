@@ -34,7 +34,7 @@ type Option struct {
 	CustomAttrFunc func(likeId string, userId string) g.MapStrAny //自定义增量属性hash的数据 用于异步入库时使用
 }
 
-func NewLike(ctx context.Context, opt *Option) ILike {
+func New(ctx context.Context, opt *Option) ILike {
 	return &defaultLike{
 		opt:          opt,
 		commonAction: commonAction{RedisKey: opt.RedisKey},

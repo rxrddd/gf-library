@@ -30,7 +30,7 @@ type defaultFollow struct {
 	redis *gredis.Redis
 }
 
-func NewDefaultFollow() IFollow {
+func New() IFollow {
 	return &defaultFollow{
 		redis: g.Redis(),
 	}
