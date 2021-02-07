@@ -1,6 +1,7 @@
 package shoppingcart
 
 import (
+	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/os/gtime"
 	"github.com/gogf/gf/test/gtest"
 	"testing"
@@ -17,9 +18,11 @@ var item = Item{
 	Spu:        "222",
 	Num:        1,
 	SalePrice:  100,
-	PostFree:   false,
-	Activities: nil,
 	CreateTime: gtime.Now().Timestamp(),
+	CustomAttr: g.MapStrAny{
+		"test":  1,
+		"test2": 2,
+	},
 }
 var item2 = Item{
 	ItemId:     itemId2,
@@ -27,9 +30,11 @@ var item2 = Item{
 	Spu:        "222",
 	Num:        1,
 	SalePrice:  100,
-	PostFree:   false,
-	Activities: nil,
 	CreateTime: gtime.Now().Timestamp(),
+	CustomAttr: g.MapStrAny{
+		"test":  1,
+		"test2": 2,
+	},
 }
 
 func TestDefaultCart(t *testing.T) {
@@ -90,6 +95,14 @@ func TestDefaultCart(t *testing.T) {
 		t.Assert(err, nil)
 		t.Assert(len(list), 0)
 
+	})
+}
+func TestDefaultCart_2(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		cart := setUp()
+		_ = cart.Create(userId, item)
+		g.Dump(cart.List(userId))
+		g.Dump(cart.GetItem(userId, itemId1))
 	})
 }
 func setUp() ICart {

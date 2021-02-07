@@ -1,6 +1,7 @@
 package shoppingcart
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gogf/gf/database/gredis"
 	"github.com/gogf/gf/errors/gerror"
@@ -12,26 +13,26 @@ import (
 )
 
 type ICart interface {
-	Create(userId string, item Item) (err error)                 //添加一个商品
-	Remove(userId string, itemId string) (err error)             //删除一个商品
-	Incr(userId string, itemId string) (err error)               //商品加1
-	Decr(userId string, itemId string) (err error)               //商品减1
-	Clear(userId string) (err error)                             //清除购物车
-	List(userId string) (item []*Item, err error)                //购物车列表
-	Count(userId string) (count int64, err error)                //购物车合计数量
-	HasItem(userId string, itemId string) (flag bool, err error) //是否已经加入了购物车
+	Create(userId string, item Item) (err error)                  //添加一个商品
+	Remove(userId string, itemId string) (err error)              //删除一个商品
+	Incr(userId string, itemId string) (err error)                //商品加1
+	Decr(userId string, itemId string) (err error)                //商品减1
+	Clear(userId string) (err error)                              //清除购物车
+	List(userId string) (item []*Item, err error)                 //购物车列表
+	GetItem(userId string, itemId string) (item *Item, err error) //获取一个购物车详情
+	Count(userId string) (count int64, err error)                 //购物车合计数量
+	HasItem(userId string, itemId string) (flag bool, err error)  //是否已经加入了购物车
 }
 
 // 单个商品item元素
 type Item struct {
-	ItemId     string          `json:"item_id"`
-	Sku        string          `json:"sku"`
-	Spu        string          `json:"spu"`
-	Num        int32           `json:"num"`
-	SalePrice  float64         `json:"sale_price"`           // 记录加车时候的销售价格
-	PostFree   bool            `json:"post_free,omitempty"`  // 是否免邮
-	Activities []*ItemActivity `json:"activities,omitempty"` // 参加的活动记录
-	CreateTime int64           `json:"create_time"`
+	ItemId     string      `json:"item_id"`
+	Sku        string      `json:"sku"`
+	Spu        string      `json:"spu"`
+	Num        int64       `json:"num"`
+	SalePrice  float64     `json:"sale_price"` // 记录加车时候的销售价格
+	CreateTime int64       `json:"create_time"`
+	CustomAttr g.MapStrAny `json:"custom_attr"` //自定义数据
 }
 
 // 活动
@@ -114,17 +115,44 @@ func (l *defaultCart) List(userId string) (items []*Item, err error) {
 	}
 	for _, value := range i.Strings() {
 		doVar, err := l.redis.DoVar("HGETALL", l.getHashKey(userId, value))
-		var itm *Item
 		if err != nil {
 			g.Log().Error(gerror.Wrap(err, "获取购物车列表错误"))
 			break
 		}
-		err = doVar.Struct(&itm)
-		if err == nil {
-			itms = append(itms, itm)
+		item, err := l.convMapToItem(doVar)
+		if err != nil {
+			g.Log().Error(gerror.Wrap(err, "redis数据转换为item数据错误"))
+			break
 		}
+		itms = append(itms, item)
 	}
 	return itms, nil
+}
+
+func (l *defaultCart) GetItem(userId string, itemId string) (item *Item, err error) {
+	if flag, err := l.HasItem(userId, itemId); !flag {
+		return item, err
+	}
+	doVar, err := l.redis.DoVar("HGETALL", l.getHashKey(userId, itemId))
+	return l.convMapToItem(doVar)
+}
+
+func (l *defaultCart) convMapToItem(doVar *g.Var) (item *Item, err error) {
+	itemMap := doVar.Map()
+	var customAttr g.MapStrAny
+	if err = json.Unmarshal(gconv.Bytes(itemMap["custom_attr"]), &customAttr); err != nil {
+		g.Log().Error(gerror.Wrap(err, "解析custom_attr错误"))
+		return item, err
+	}
+	return &Item{
+		ItemId:     gconv.String(itemMap["item_id"]),
+		Sku:        gconv.String(itemMap["sku"]),
+		Spu:        gconv.String(itemMap["spu"]),
+		Num:        gconv.Int64(itemMap["num"]),
+		SalePrice:  gconv.Float64(itemMap["sale_price"]),
+		CreateTime: gconv.Int64(itemMap["create_time"]),
+		CustomAttr: customAttr,
+	}, nil
 }
 
 func (l *defaultCart) Count(userId string) (count int64, err error) {
@@ -146,7 +174,10 @@ func (l *defaultCart) create(userId string, item Item) error {
 	return redisx.Multi(l.redis.Conn(), func(con redis.Conn) {
 		args := make([]interface{}, 0)
 		args = append(args, l.getHashKey(userId, item.ItemId))
-		args = append(args, gutil.MapToSlice(gconv.Map(item))...)
+		jsonStr, _ := json.Marshal(item.CustomAttr)
+		itemMap := gconv.Map(item)
+		itemMap["custom_attr"] = jsonStr
+		args = append(args, gutil.MapToSlice(itemMap)...)
 		con.Send("HMSET", args...)
 		con.Send("SADD", l.getItemsSetKey(userId), item.ItemId)
 	})
