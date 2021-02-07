@@ -53,7 +53,9 @@ func (l *defaultFollow) Follow(userId string, followId string) (err error) {
 	if flag {
 		return nil
 	}
-	return redisx.Multi(l.redis.Conn(), func(con redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(con redis.Conn) {
 		con.Send("ZADD", l.getFollowSetKey(userId), gtime.Now().Timestamp(), followId)
 		con.Send("ZADD", l.getFansSetKey(followId), gtime.Now().Timestamp(), userId)
 	})
@@ -70,7 +72,9 @@ func (l *defaultFollow) UnFollow(userId string, followId string) (err error) {
 	if !flag {
 		return nil
 	}
-	return redisx.Multi(l.redis.Conn(), func(con redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(con redis.Conn) {
 		con.Send("ZREM", l.getFollowSetKey(userId), followId)
 		con.Send("ZREM", l.getFansSetKey(followId), userId)
 	})

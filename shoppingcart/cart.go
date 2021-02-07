@@ -69,7 +69,9 @@ func (l *defaultCart) Remove(userId string, itemId string) (err error) {
 	if flag, _ := l.HasItem(userId, itemId); !flag {
 		return nil
 	}
-	return redisx.Multi(l.redis.Conn(), func(con redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(con redis.Conn) {
 		con.Send("DEL", l.getHashKey(userId, itemId))
 		con.Send("SREM", l.getItemsSetKey(userId), itemId)
 	})
@@ -99,7 +101,9 @@ func (l *defaultCart) Decr(userId string, itemId string) (err error) {
 
 func (l *defaultCart) Clear(userId string) (err error) {
 	keys, _ := l.redis.DoVar("KEYS", l.getAllHashKey(userId))
-	return redisx.Multi(l.redis.Conn(), func(con redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(con redis.Conn) {
 		con.Send("DEL", l.getItemsSetKey(userId))
 		for _, key := range keys.Strings() {
 			con.Send("DEL", key)
@@ -171,7 +175,9 @@ func (l *defaultCart) HasItem(userId string, itemId string) (flag bool, err erro
 }
 
 func (l *defaultCart) create(userId string, item Item) error {
-	return redisx.Multi(l.redis.Conn(), func(con redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(con redis.Conn) {
 		args := make([]interface{}, 0)
 		args = append(args, l.getHashKey(userId, item.ItemId))
 		jsonStr, _ := json.Marshal(item.CustomAttr)

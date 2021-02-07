@@ -82,7 +82,9 @@ func (l *defaultLike) Like(likeId string, userId string) (err error) {
 }
 
 func (l *defaultLike) like(likeId string, userId string) (err error) {
-	return redisx.Multi(l.redis.Conn(), func(c redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(c redis.Conn) {
 		c.Send("SADD", l.getChangeLikeKey(), likeId)
 		c.Send("SADD", l.getChangeLikeUserKey(likeId), userId)
 		c.Send("INCR", l.getCounterKey(likeId))
@@ -138,7 +140,9 @@ func (l *defaultLike) Count(likeId string) (count int64, err error) {
 }
 
 func (l *defaultLike) unLike(likeId string, userId string) (err error) {
-	return redisx.Multi(l.redis.Conn(), func(c redis.Conn) {
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(c redis.Conn) {
 		c.Send("SADD", l.getChangeLikeKey(), likeId)
 		c.Send("SADD", l.getChangeLikeUserKey(likeId), userId)
 		c.Send("DECR", l.getCounterKey(likeId))

@@ -101,8 +101,14 @@ func TestDefaultCart_2(t *testing.T) {
 	gtest.C(t, func(t *gtest.T) {
 		cart := setUp()
 		_ = cart.Create(userId, item)
-		g.Dump(cart.List(userId))
-		g.Dump(cart.GetItem(userId, itemId1))
+		_ = cart.Incr(userId, itemId1)
+
+		_ = cart.Decr(userId, itemId1)
+		_ = cart.Decr(userId, itemId1)
+		_ = cart.Decr(userId, itemId1)
+		flag, err := cart.HasItem(userId, itemId1)
+		t.Assert(err, nil)
+		t.Assert(flag, false)
 	})
 }
 func setUp() ICart {

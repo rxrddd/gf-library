@@ -17,7 +17,12 @@ func Multi(conn redis.Conn, fc func(con redis.Conn)) error {
 
 func DelKey(conn *gredis.Redis, redisKey string) {
 	keys, _ := conn.DoVar("KEYS", redisKey)
-	_ = Multi(conn.Conn(), func(con redis.Conn) {
+	if len(keys.Strings()) <= 0 {
+		return
+	}
+	c := conn.Conn()
+	defer c.Close()
+	_ = Multi(c, func(con redis.Conn) {
 		for _, key := range keys.Strings() {
 			con.Send("DEL", key)
 		}
