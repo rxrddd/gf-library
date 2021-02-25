@@ -15,6 +15,7 @@ import (
 type ICart interface {
 	Create(userId string, item Item) (err error)                  //添加一个商品
 	Remove(userId string, itemId string) (err error)              //删除一个商品
+	Removes(userId string, itemId []string) (err error)           //删除多个商品
 	Incr(userId string, itemId string) (err error)                //商品加1
 	Decr(userId string, itemId string) (err error)                //商品减1
 	Clear(userId string) (err error)                              //清除购物车
@@ -74,6 +75,23 @@ func (l *defaultCart) Remove(userId string, itemId string) (err error) {
 	return redisx.Multi(conn, func(con redis.Conn) {
 		con.Send("DEL", l.getHashKey(userId, itemId))
 		con.Send("SREM", l.getItemsSetKey(userId), itemId)
+	})
+}
+
+func (l *defaultCart) Removes(userId string, itemId []string) (err error) {
+	if len(itemId) <= 0 {
+		return
+	}
+	conn := l.redis.Conn()
+	defer conn.Close()
+	return redisx.Multi(conn, func(con redis.Conn) {
+		for _, value := range itemId {
+			if flag, _ := l.HasItem(userId, value); !flag {
+				return
+			}
+			con.Send("DEL", l.getHashKey(userId, value))
+			con.Send("SREM", l.getItemsSetKey(userId), value)
+		}
 	})
 }
 

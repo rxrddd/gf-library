@@ -1,6 +1,0 @@
-# Database.
-[database]
-    link  = "mysql:root:root@tcp(127.0.0.1:3306)/test"
-    debug = true
-[redis]
-    default = "127.0.0.1:6379,0"

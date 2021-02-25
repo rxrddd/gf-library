@@ -111,6 +111,20 @@ func TestDefaultCart_2(t *testing.T) {
 		t.Assert(flag, false)
 	})
 }
+func TestDefaultCart_Removes(t *testing.T) {
+	gtest.C(t, func(t *gtest.T) {
+		cart := setUp()
+		_ = cart.Create(userId, item)
+		_ = cart.Create(userId, item2)
+		err := cart.Removes(userId, []string{itemId1})
+		t.Assert(err, nil)
+		flag, err := cart.HasItem(userId, itemId1)
+		flag2, err := cart.HasItem(userId, itemId2)
+		t.Assert(err, nil)
+		t.Assert(flag, false)
+		t.Assert(flag2, true)
+	})
+}
 func setUp() ICart {
 	return New()
 }
